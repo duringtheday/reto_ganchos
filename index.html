@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- React and ReactDOM loaded via CDN -->
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="./images/gancho.png" type="image/png">
+    <title>Reto: Ganchos</title>
+</head>
+
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+
+        const useFetch = (url) => {
+
+            const [data, setData] = React.useState(null);
+            const [loading, setLoading] = React.useState(true);
+            const [error, setError] = React.useState(null);
+
+            React.useEffect(() => {
+                const fetchData = async () => {
+                    try {
+                        const response = await fetch(url);
+                        const result = await response.json();
+                        setData(result);
+
+                    } catch (err) {
+                        setError(err.message);
+                    } finally {
+                        setLoading(false);
+                    }
+                };
+
+                fetchData();
+
+            }, [url]);
+
+            return { data, loading, error };
+
+        };
+
+        // Modal inline CSS for simplicity (you can move this to a CSS file)
+        const modalStyle = {
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            backgroundColor: '#fff',
+            padding: '20px',
+            boxShadow: '0px 0px 10px rgba(0, 0, 0, 0.1)',
+            borderRadius: '20px', 
+            zIndex: 1000,
+        };
+
+        // Apply text alignment specifically to the `modal-content p`
+        const modalContentStyle = {
+            textAlign: 'left', // Ensure text is aligned left
+        };
+
+        // Modal component to display user details
+        const UserModal = ({ user, onClose }) => {
+            if (!user) return null; // Don't show modal if no user is selected
+
+            return (
+                <div className="modal" style={modalStyle}>
+                    <div className="modal-content">
+                        <h2>{user.name}</h2>
+                        <p style={modalContentStyle}><strong>Company:</strong> {user.company.name}</p>
+                        <p style={modalContentStyle}><strong>Catchphrase:</strong> {user.company.catchPhrase}</p>
+                        <p style={modalContentStyle}><strong>Email:</strong> {user.email}</p>
+                        {/* <button onClick={onClose}>Close</button> */}
+                    </div>
+                </div>
+            );
+        };
+
+
+        // Main Component to list users and handle modal display
+        const UsersComponent = () => {
+
+            const [users, setUsers] = React.useState([]);
+            const [selectedUser, setSelectedUser] = React.useState(null); // Declare state for selected user
+            const { data, loading, error } = useFetch('https://jsonplaceholder.typicode.com/users');
+
+            React.useEffect(() => {
+                if (data) {
+                    setUsers(data);
+                }
+            }, [data]);
+
+            // Toggle modal: Open if different user, close if same user clicked
+            const handleUserClick = (user) => {
+                if (selectedUser && selectedUser.id === user.id) {
+                    setSelectedUser(null); // Close modal if same user clicked again
+                } else {
+                    setSelectedUser(user); // Open modal with new user
+                }
+            };
+
+            const closeModal = () => {
+                setSelectedUser(null); // Close the modal
+            };
+
+            return (
+
+                <div className="users-container">
+                    <h2>Users List</h2>
+                    {loading && <p>Cargando...</p>}
+                    {error && <p>Error: {error}</p>}
+                    <div>
+                        <div className="data-container">
+                            {users.map(user => (
+                                <div key={user.id} className="data-user" onClick={() => handleUserClick(user)}>
+                                    <h3>{user.name}</h3>
+                                    <p>{user.company.catchPhrase}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Show the modal when a user is selected */}
+                    {selectedUser && <UserModal user={selectedUser} onClose={closeModal} />}
+
+                </div>
+
+            );
+
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<UsersComponent />)
+
+
+    </script>
+</body>
+
+</html>
